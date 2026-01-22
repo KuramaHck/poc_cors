@@ -1,1 +1,1 @@
-# PoC_cors.github.io
+# PoC_cors
