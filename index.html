@@ -1,76 +1,394 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8">
-  <title>CORS PoC Tester</title>
+<meta charset="UTF-8">
+
+<title>CORS Security Tester</title>
+
+<style>
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background: #111;
+    color: #eee;
+}
+
+input {
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 20px;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+.box {
+
+    margin-top:20px;
+    padding:20px;
+    border-radius:8px;
+    background:#222;
+
+}
+
+.vulnerable {
+
+    border-left:5px solid red;
+
+}
+
+.warning {
+
+    border-left:5px solid orange;
+
+}
+
+.safe {
+
+    border-left:5px solid green;
+
+}
+
+
+pre {
+
+white-space: pre-wrap;
+
+}
+
+</style>
+
 </head>
 
+
 <body>
-  <h2>CORS PoC - Leitura Cross-Origin</h2>
 
-  <label>URL alvo:</label><br>
-  <input 
-    id="target" 
-    type="text" 
-    placeholder="https://exemplo.com/api"
-    style="width:400px"
-  >
 
-  <br><br>
+<h2>🔐 CORS Misconfiguration Tester</h2>
 
-  <button onclick="exploit()">Executar PoC</button>
+<p>
+Esta ferramenta executa uma requisição cross-origin utilizando o navegador.
+</p>
 
-  <pre id="result" style="white-space: pre-wrap; margin-top:20px;"></pre>
+
+<label>
+URL alvo:
+</label>
+
+<br>
+
+
+<input 
+id="target"
+placeholder="https://site.com/api"
+>
+
+
+<br>
+
+
+<button onclick="exploit()">
+Executar teste
+</button>
+
+
+<div id="status" class="box">
+
+Aguardando teste...
+
+</div>
+
+
+<div class="box">
+
+<h3>Resultado</h3>
+
+<pre id="result"></pre>
+
+</div>
+
 
 
 <script>
 
-function exploit() {
 
-    const url = document.getElementById("target").value;
+// Permite abrir diretamente:
+// ?url=https://alvo.com/api
 
-    if (!url) {
-        document.getElementById("result").innerText =
-        "Informe uma URL alvo.";
-        return;
-    }
+window.onload = function(){
+
+const params =
+new URLSearchParams(window.location.search);
 
 
-    fetch(url, {
-        method: "GET",
-        credentials: "include"
-    })
+const url =
+params.get("url");
 
-    .then(response => {
 
-        document.getElementById("result").innerText =
-        "Status HTTP: " + response.status + "\n\n" +
-        "Headers:\n" +
-        [...response.headers.entries()]
-          .map(([k,v]) => `${k}: ${v}`)
-          .join("\n") +
-        "\n\nResposta:\n";
+if(url){
 
-        return response.text();
-
-    })
-
-    .then(data => {
-
-        document.getElementById("result").innerText += data;
-
-    })
-
-    .catch(error => {
-
-        document.getElementById("result").innerText =
-        "Erro ao executar a PoC:\n" + error;
-
-    });
+document.getElementById("target").value=url;
 
 }
 
+};
+
+
+
+function exploit(){
+
+
+const target =
+document.getElementById("target").value.trim();
+
+
+
+if(!target){
+
+alert("Informe uma URL.");
+
+return;
+
+}
+
+
+
+document.getElementById("status").innerHTML =
+"Executando teste...";
+
+
+
+fetch(target, {
+
+method:"GET",
+
+credentials:"include"
+
+})
+
+.then(async response=>{
+
+
+let headers={};
+
+
+response.headers.forEach(
+(value,key)=>{
+
+headers[key]=value;
+
+});
+
+
+let body =
+await response.text();
+
+
+
+analyzeCors(headers);
+
+
+
+document.getElementById("result").innerText =
+
+`
+Status HTTP:
+${response.status}
+
+
+CORS Headers:
+
+${JSON.stringify(headers,null,2)}
+
+
+Resposta:
+
+${body}
+`;
+
+
+
+})
+
+.catch(error=>{
+
+
+document.getElementById("status").className =
+"box warning";
+
+
+document.getElementById("status").innerHTML =
+
+`
+🟡 Resultado inconclusivo
+
+O navegador bloqueou a leitura da resposta.
+
+Possíveis motivos:
+
+- CORS não permite este domínio;
+- endpoint exige autenticação;
+- política Same-Origin bloqueou acesso;
+- erro de rede.
+
+Detalhe:
+${error}
+
+`;
+
+});
+
+
+
+}
+
+
+
+function analyzeCors(headers){
+
+
+let status =
+document.getElementById("status");
+
+
+
+let allowOrigin =
+headers["access-control-allow-origin"];
+
+
+let allowCredentials =
+headers["access-control-allow-credentials"];
+
+
+
+if(
+
+allowOrigin === "*" &&
+
+allowCredentials === "true"
+
+){
+
+
+status.className =
+"box vulnerable";
+
+
+status.innerHTML =
+
+`
+🔴 POTENCIALMENTE VULNERÁVEL
+
+Foi identificado:
+
+Access-Control-Allow-Origin: *
+
+junto com:
+
+Access-Control-Allow-Credentials: true
+
+
+Essa combinação permite possível exposição
+de dados autenticados dependendo do comportamento
+da aplicação.
+
+`;
+
+return;
+
+}
+
+
+
+
+if(
+
+allowOrigin &&
+
+allowCredentials === "true"
+
+){
+
+
+status.className =
+"box warning";
+
+
+status.innerHTML =
+
+`
+🟡 CONFIGURAÇÃO SUSPEITA
+
+O servidor permite requisições
+cross-origin autenticadas.
+
+Origin permitido:
+
+${allowOrigin}
+
+
+Validar se este domínio é confiável.
+`;
+
+return;
+
+}
+
+
+
+if(allowOrigin){
+
+
+status.className =
+"box warning";
+
+
+status.innerHTML =
+
+`
+🟡 CORS HABILITADO
+
+Foi encontrado:
+
+Access-Control-Allow-Origin:
+${allowOrigin}
+
+
+Avaliar impacto conforme os dados expostos.
+`;
+
+return;
+
+}
+
+
+
+status.className =
+"box safe";
+
+
+status.innerHTML =
+
+`
+🟢 NÃO IDENTIFICADO COMO VULNERÁVEL
+
+Nenhum header CORS permissivo
+foi observado.
+
+`;
+
+}
+
+
+
 </script>
 
+
 </body>
+
 </html>
